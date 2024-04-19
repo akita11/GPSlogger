@@ -2,6 +2,7 @@
 #include <SPI.h>
 #include "SdFat.h"
 #include <TinyGPSPlus.h>
+#include <SoftwareSerial.h>
 
 #define LOG_FILENAME "/log.csv"
 
@@ -13,6 +14,7 @@
 File fp;
 SdFat sd;
 TinyGPSPlus gps;
+SoftwareSerial ss(3, 2); // RX, TX
 
 void PowSD(uint8_t val)
 {
@@ -41,6 +43,7 @@ const char *gpsStream =
 void setup()
 {
 	Serial.begin(9600); // from GPS
+	ss.begin(115200);
 	pinMode(PIN_POW_SD, OUTPUT);
 	digitalWrite(PIN_POW_SD, 1);
 	pinMode(PIN_POW_GPS, OUTPUT);
@@ -48,6 +51,7 @@ void setup()
 	pinMode(PIN_LED, OUTPUT);
 	digitalWrite(PIN_LED, 0);
 	PowSD(1);
+/*
 	if (!sd.begin(PIN_SD_CS, SD_SCK_MHZ(50)))
 	{
 		sd.initErrorPrint();
@@ -62,19 +66,19 @@ void setup()
 	fp = sd.open(LOG_FILENAME, O_WRONLY | O_CREAT); // for SdFat.h
 	fp.println("hogehoge");
 	fp.close();
-
+*/
+/*
 	while (*gpsStream)
 	{
 		if (gps.encode(*gpsStream++))
 		{
-			Serial.print(F("Location: "));
+			ss.print(F("Location: "));
 			if (gps.location.isValid())
 			{
-				Serial.print(gps.location.lat(), 6);
-				Serial.print(F(","));
-				Serial.print(gps.location.lng(), 6);
+				ss.print(gps.location.lat(), 6);
+				ss.print(F(","));
+				ss.print(gps.location.lng(), 6);
 			}
-
 			Serial.print(F("  Date/Time: "));
 			if (gps.date.isValid())
 			{
@@ -106,6 +110,7 @@ void setup()
 			}
 		}
 	}
+*/
 }
 
 void loop()
@@ -113,13 +118,14 @@ void loop()
 	while (Serial.available() > 0)
 	{
 		char c = Serial.read();
+		ss.write(c);
 		gps.encode(c);
 		if (gps.location.isUpdated())
 		{
-			Serial.print("Lat=\t");
-			Serial.print(gps.location.lat(), 6);
-			Serial.print(" Lng=\t");
-			Serial.println(gps.location.lng(), 6);
+			ss.print("Lat=\t");
+			ss.print(gps.location.lat(), 6);
+			ss.print(" Lng=\t");
+			ss.println(gps.location.lng(), 6);
 		}
 	}
 }
