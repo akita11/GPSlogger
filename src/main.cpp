@@ -59,8 +59,12 @@ void setup()
 
 void loop()
 {
-	if (cnt == 10){
+	for (uint8_t i = 0; i < cnt; i++){ digitalWrite(PIN_LED, 1); delay(100); digitalWrite(PIN_LED, 0); delay(100); }
+	ss.println(cnt);
+	if (cnt == 2){
 		cnt = 0;
+//		Serial.begin(9600); // from GPS
+//		ss.begin(115200); // for debug console
 		PowGPS(1);
 		digitalWrite(PIN_LED, 1); 
 		uint8_t fin = 0;
@@ -68,20 +72,22 @@ void loop()
 			while (Serial.available() > 0)
 			{
 				char c = Serial.read();
-				//ss.write(c);
+				ss.write(c);
 				gps.encode(c);
 			}
 			if (gps.location.isUpdated() && gps.date.isValid() && gps.time.isValid()){
 				fin = 1;
 			}
 		}
-		digitalWrite(PIN_LED, 0); PowGPS(0);
+		digitalWrite(PIN_LED, 0);
+		PowGPS(0);
 		ss.print("Lat="); ss.print(gps.location.lat(), 6);
 		ss.print(" Lng="); ss.println(gps.location.lng(), 6);
 		ss.print(gps.date.year()); ss.print(F("/")); ss.print(gps.date.month()); ss.print(F("/")); ss.print(gps.date.day()); ss.print(' ');
 		ss.print(gps.time.hour()); ss.print(F(":")); ss.print(gps.time.minute()); ss.print(F(":")); ss.println(gps.time.second());
 
-		PowSD(1); delay(1000);
+		PowSD(1);
+		delay(1000);
 		if (!sd.begin(PIN_SD_CS, SD_SCK_MHZ(50)))
 		{
 			sd.initErrorPrint();
@@ -94,8 +100,6 @@ void loop()
 			}
 		}
 		fp = sd.open(LOG_FILENAME, O_WRONLY | O_CREAT); // for SdFat.h
-		fp.println("hogehoge");
-		fp.println("upipi");
 		fp.print(gps.date.year()); fp.print(gps.date.month()); fp.print(gps.date.day());
 		fp.print(',');
 		fp.print(gps.time.hour()); fp.print(gps.time.minute()); fp.println(gps.time.second());
