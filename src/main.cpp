@@ -68,6 +68,7 @@ void setup()
 // GPS on   : 38mA
 // SD write :
 
+uint16_t cc = 0;
 void loop()
 {
 //	for (uint8_t i = 0; i < cnt; i++){ digitalWrite(PIN_LED, 1); delay(100); digitalWrite(PIN_LED, 0); delay(100); }
@@ -83,10 +84,19 @@ void loop()
 				char c = Serial.read();
 				ss.write(c);
 				gps.encode(c);
+				cc++;
 			}
-			ss.print(gps.location.isValid());
-			ss.print(gps.date.isValid());
-			if (gps.location.isValid() && gps.date.isValid() && gps.time.isValid()){
+/*
+			if (cc > 100){
+				cc = 0;
+				ss.print('[');
+				ss.print(gps.location.isValid());
+				ss.print(gps.date.isValid());
+				ss.print(']');
+			}
+*/
+//			if (gps.location.isValid() && gps.date.isValid() && gps.time.isValid()){
+			if (gps.location.isValid()){
 				fin = 1;
 			}
 		}
