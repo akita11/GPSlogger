@@ -28,10 +28,18 @@ void PowSD(uint8_t val)
 
 void PowGPS(uint8_t val)
 {
-	if (val == 1)
+	if (val == 1){
 		digitalWrite(PIN_POW_GPS, 0);
-	else
+		UCSR0B |= _BV(TXEN0) | _BV(RXEN0); // enable UART0
+		pinMode(0, OUTPUT); // RXD for GPS
+	}
+	else{
 		digitalWrite(PIN_POW_GPS, 1);
+		UCSR0B &= ~(_BV(TXEN0) | _BV(RXEN0)); // enable UART0
+		digitalWrite(1, 0); // TXD for GPS = 0
+		pinMode(0, INPUT);
+		digitalWrite(0, 0); // RXD for GPS = 0
+	}
 }
 
 volatile uint16_t cnt = 0;
@@ -45,7 +53,6 @@ void setup()
 	Serial.begin(9600); // from GPS
 	ss.begin(115200); // for debug console
 	pinMode(PIN_POW_SD, OUTPUT); pinMode(PIN_POW_GPS, OUTPUT);
-	PowSD(0); PowGPS(0);
 	pinMode(PIN_LED, OUTPUT); digitalWrite(PIN_LED, 0);
 	for (uint8_t i = 0; i < 3; i++){ digitalWrite(PIN_LED, 1); delay(100); digitalWrite(PIN_LED, 0); delay(100); }
   	cli();
@@ -54,8 +61,12 @@ void setup()
   	WDTCSR =  0b01000000 | 0b00100000; // enable WDT interrupt, cycle = 4s
   	sei();
 	set_sleep_mode(SLEEP_MODE_PWR_DOWN); //set sleep mode
+	cnt = 0;
+	PowSD(0); PowGPS(0);
 }
 
+// GPS on   : 38mA
+// SD write :
 
 void loop()
 {
@@ -63,8 +74,6 @@ void loop()
 	ss.println(cnt);
 	if (cnt == 2){
 		cnt = 0;
-//		Serial.begin(9600); // from GPS
-//		ss.begin(115200); // for debug console
 		PowGPS(1);
 		digitalWrite(PIN_LED, 1); 
 		uint8_t fin = 0;
@@ -85,7 +94,7 @@ void loop()
 		ss.print(" Lng="); ss.println(gps.location.lng(), 6);
 		ss.print(gps.date.year()); ss.print(F("/")); ss.print(gps.date.month()); ss.print(F("/")); ss.print(gps.date.day()); ss.print(' ');
 		ss.print(gps.time.hour()); ss.print(F(":")); ss.print(gps.time.minute()); ss.print(F(":")); ss.println(gps.time.second());
-
+/*
 		PowSD(1);
 		delay(1000);
 		if (!sd.begin(PIN_SD_CS, SD_SCK_MHZ(50)))
@@ -109,6 +118,7 @@ void loop()
 		fp.close();
 		delay(1000);
 		PowSD(0);
+*/
 	}
 	sleep_mode();
 }
