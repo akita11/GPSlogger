@@ -20,25 +20,31 @@ SoftwareSerial ss(A1, A2); // RX, TX
 
 void PowSD(uint8_t val)
 {
-	if (val == 1)
+	if (val == 1){
 		digitalWrite(PIN_POW_SD, 0);
-	else
+		digitalWrite(PIN_SD_CS, 1);
+		SPCR |= _BV(SPE); // enable SPI
+	}
+	else{
 		digitalWrite(PIN_POW_SD, 1);
+		digitalWrite(PIN_SD_CS, 0);
+		SPCR &= ~(_BV(SPE)); // disable SPI
+		PORTD &= ~(_BV(PB3) | _BV(PB4) | _BV(PB5)); // MOSI, SCK, SS = 0
+	}
 }
 
 void PowGPS(uint8_t val)
 {
 	if (val == 1){
 		digitalWrite(PIN_POW_GPS, 0);
+		pinMode(0, INPUT);
 		UCSR0B |= _BV(TXEN0) | _BV(RXEN0); // enable UART0
-		pinMode(0, OUTPUT); // RXD for GPS
 	}
 	else{
 		digitalWrite(PIN_POW_GPS, 1);
 		UCSR0B &= ~(_BV(TXEN0) | _BV(RXEN0)); // enable UART0
-		digitalWrite(1, 0); // TXD for GPS = 0
-		pinMode(0, INPUT);
-		digitalWrite(0, 0); // RXD for GPS = 0
+		pinMode(0, OUTPUT); // RXD for GPS
+		PORTB &= ~(_BV(PB0) | _BV(PB1)); // TXD, RXD = 0
 	}
 }
 
