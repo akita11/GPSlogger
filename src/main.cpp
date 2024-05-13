@@ -62,7 +62,7 @@ void setup()
   	sei();
 	set_sleep_mode(SLEEP_MODE_PWR_DOWN); //set sleep mode
 	cnt = 0;
-	PowSD(0); PowGPS(0);
+	PowSD(1); PowGPS(0);
 }
 
 // GPS on   : 38mA
@@ -70,10 +70,10 @@ void setup()
 
 void loop()
 {
-	for (uint8_t i = 0; i < cnt; i++){ digitalWrite(PIN_LED, 1); delay(100); digitalWrite(PIN_LED, 0); delay(100); }
+//	for (uint8_t i = 0; i < cnt; i++){ digitalWrite(PIN_LED, 1); delay(100); digitalWrite(PIN_LED, 0); delay(100); }
+	digitalWrite(PIN_LED, 1); delay(10); digitalWrite(PIN_LED, 0);
 	ss.println(cnt);
-	if (cnt == 2){
-		cnt = 0;
+	if (cnt == 1){
 		PowGPS(1);
 		digitalWrite(PIN_LED, 1); 
 		uint8_t fin = 0;
@@ -84,7 +84,9 @@ void loop()
 				ss.write(c);
 				gps.encode(c);
 			}
-			if (gps.location.isUpdated() && gps.date.isValid() && gps.time.isValid()){
+			ss.print(gps.location.isValid());
+			ss.print(gps.date.isValid());
+			if (gps.location.isValid() && gps.date.isValid() && gps.time.isValid()){
 				fin = 1;
 			}
 		}
@@ -95,6 +97,7 @@ void loop()
 		ss.print(gps.date.year()); ss.print(F("/")); ss.print(gps.date.month()); ss.print(F("/")); ss.print(gps.date.day()); ss.print(' ');
 		ss.print(gps.time.hour()); ss.print(F(":")); ss.print(gps.time.minute()); ss.print(F(":")); ss.println(gps.time.second());
 /*
+		ss.print("initializing SD card...");
 		PowSD(1);
 		delay(1000);
 		if (!sd.begin(PIN_SD_CS, SD_SCK_MHZ(50)))
@@ -108,17 +111,21 @@ void loop()
 				delay(100);
 			}
 		}
-		fp = sd.open(LOG_FILENAME, O_WRONLY | O_CREAT); // for SdFat.h
+		ss.print("write to SD card...");
+		fp = sd.open(LOG_FILENAME, O_WRONLY | O_APPEND);
 		fp.print(gps.date.year()); fp.print(gps.date.month()); fp.print(gps.date.day());
 		fp.print(',');
-		fp.print(gps.time.hour()); fp.print(gps.time.minute()); fp.println(gps.time.second());
+		fp.print(gps.time.hour()); fp.print(gps.time.minute()); fp.print(gps.time.second());
+		fp.print(',');
 		fp.print(gps.location.lat(), 6);
 		fp.print(',');
 		fp.println(gps.location.lng(), 6);
 		fp.close();
+		ss.println("done");
 		delay(1000);
 		PowSD(0);
 */
+		cnt = 0;
 	}
 	sleep_mode();
 }
