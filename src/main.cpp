@@ -12,6 +12,7 @@
 #define PIN_POW_GPS A4
 #define PIN_SD_CS 4
 #define PIN_LED 5
+//#define PIN_LED 13
 
 File fp;
 SdFat sd;
@@ -29,7 +30,7 @@ void PowSD(uint8_t val)
 		digitalWrite(PIN_POW_SD, 1);
 		digitalWrite(PIN_SD_CS, 0);
 		SPCR &= ~(_BV(SPE)); // disable SPI
-		PORTD &= ~(_BV(PB3) | _BV(PB4) | _BV(PB5)); // MOSI, SCK, SS = 0
+		PORTB &= ~(_BV(PB3) | _BV(PB4) | _BV(PB5)); // MOSI, SCK, SS = 0
 	}
 }
 
@@ -38,13 +39,12 @@ void PowGPS(uint8_t val)
 	if (val == 1){
 		digitalWrite(PIN_POW_GPS, 0);
 		pinMode(0, INPUT);
-		UCSR0B |= _BV(TXEN0) | _BV(RXEN0); // enable UART0
+		UCSR0B |= (_BV(TXEN0) | _BV(RXEN0)); // enable UART0
 	}
 	else{
 		digitalWrite(PIN_POW_GPS, 1);
-		UCSR0B &= ~(_BV(TXEN0) | _BV(RXEN0)); // enable UART0
-		pinMode(0, OUTPUT); // RXD for GPS
-		PORTB &= ~(_BV(PB0) | _BV(PB1)); // TXD, RXD = 0
+		UCSR0B &= ~(_BV(TXEN0) | _BV(RXEN0)); // disable UART0
+		PORTD = 0x00; // 0-7 = 0 (TXD,RXD=0)
 	}
 }
 
@@ -60,6 +60,7 @@ void setup()
 	ss.begin(115200); // for debug console
 	pinMode(PIN_POW_SD, OUTPUT); pinMode(PIN_POW_GPS, OUTPUT);
 	pinMode(PIN_LED, OUTPUT); digitalWrite(PIN_LED, 0);
+	// flash LED at boot
 	for (uint8_t i = 0; i < 3; i++){ digitalWrite(PIN_LED, 1); delay(100); digitalWrite(PIN_LED, 0); delay(100); }
   	cli();
  	MCUSR = 0;
@@ -68,7 +69,15 @@ void setup()
   	sei();
 	set_sleep_mode(SLEEP_MODE_PWR_DOWN); //set sleep mode
 	cnt = 0;
-	PowSD(1); PowGPS(0);
+
+	DDRC = 0xff; // A0-A5 as OUTPUT
+	PORTC = 0x00; // A0-A5 = 0
+	DDRB = 0xff; // 8-13 as OUTPUT
+	PORTB = 0x00; // 8-13 = 0
+	DDRD = 0xff; // 0-7 as OUTPUT 
+	PORTD = 0x00; // 0-7 = 0
+
+	PowSD(0); PowGPS(0);
 }
 
 // GPS on   : 38mA
