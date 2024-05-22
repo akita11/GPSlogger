@@ -1,23 +1,30 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include "SdFat.h"
-#include <TinyGPSPlus.h>
+//#include <TinyGPSPlus.h>
 #include <SoftwareSerial.h>
 #include <avr/wdt.h> 
 #include <avr/sleep.h>
 
 #define LOG_FILENAME "/log.csv"
 
-#define PIN_POW_SD A3
-#define PIN_POW_GPS A4
+//#define PIN_POW_SD A3 // for v09
+//#define PIN_POW_GPS A4 // for v09
+#define PIN_POW_SD A0 // for v1
+#define PIN_POW_GPS A4 // for v1
 #define PIN_SD_CS 4
-#define PIN_LED 5
-//#define PIN_LED 13
+#define PIN_LED A1 // for v1
+//#define PIN_LED 5 // for v09
+//#define PIN_LED 13 // for v1
+
+#define LEN_LINE 128
+char buf[LEN_LINE];
 
 File fp;
 SdFat sd;
-TinyGPSPlus gps;
-SoftwareSerial ss(A1, A2); // RX, TX
+//TinyGPSPlus gps;
+//SoftwareSerial ss(A1, A2); // RX, TX // for v09
+SoftwareSerial ss(A2, 10); // RX, TX
 
 void PowSD(uint8_t val)
 {
@@ -60,6 +67,7 @@ void setup()
 	ss.begin(115200); // for debug console
 	pinMode(PIN_POW_SD, OUTPUT); pinMode(PIN_POW_GPS, OUTPUT);
 	pinMode(PIN_LED, OUTPUT); digitalWrite(PIN_LED, 0);
+
 	// flash LED at boot
 	for (uint8_t i = 0; i < 3; i++){ digitalWrite(PIN_LED, 1); delay(100); digitalWrite(PIN_LED, 0); delay(100); }
   	cli();
@@ -92,8 +100,27 @@ void loop()
 	if (cnt == 1){
 		PowGPS(1);
 		digitalWrite(PIN_LED, 1); 
+
 		uint8_t fin = 0;
+		uint8_t pBuf = 0;
 		while(fin == 0){
+			while(Serial.available() > 0 && pBuf < LEN_LINE){
+				char c = Serial.read();
+				if (c == '\r'){
+	 				buf[pBuf] = '\0';
+// $GNRMC,,V,,,,,,,,,,M*4E
+// $GNRMC,002154.000,V,3632.61109,N,13642.31699,E,0.13,0.00,,,,A*6A
+// $GNRMC,002220.000,A,3632.64273,N,13642.30496,E,0.00,0.00,220524,,,A*7B
+					if (buf[3] == 'R' && buf[4] == 'M' && buf[5] == 'C'){
+						ss.print('*');
+						ss.println(buf);
+					}
+					ss.println(buf);
+					pBuf = 0;
+				}
+				buf[pBuf++] = c;
+			}
+/*
 			while (Serial.available() > 0)
 			{
 				char c = Serial.read();
@@ -101,7 +128,13 @@ void loop()
 				gps.encode(c);
 				cc++;
 			}
-/*
+			while (Serial.available() > 0)
+			{
+				char c = Serial.read();
+				ss.write(c);
+				gps.encode(c);
+				cc++;
+			}
 			if (cc > 100){
 				cc = 0;
 				ss.print('[');
@@ -109,11 +142,11 @@ void loop()
 				ss.print(gps.date.isValid());
 				ss.print(']');
 			}
-*/
 //			if (gps.location.isValid() && gps.date.isValid() && gps.time.isValid()){
 			if (gps.location.isValid()){
-				fin = 1;
+//				fin = 1;
 			}
+*/
 		}
 		digitalWrite(PIN_LED, 0);
 		PowGPS(0);
