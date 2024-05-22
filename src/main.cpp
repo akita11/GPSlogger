@@ -18,7 +18,37 @@
 //#define PIN_LED 13 // for v1
 
 #define LEN_LINE 128
-char buf[LEN_LINE];
+char line[LEN_LINE];
+
+float lng, lat;
+char lng_c, lat_c;
+uint16_t tm;
+
+uint8_t NMEAparse(char *line)
+{
+  uint8_t p = 0;
+  uint8_t f = 0;
+  char buf[64];
+  uint8_t pb = 0;
+  uint8_t fValid = 0;
+  while(p < strlen(line)){
+    char c = line[p];
+    if (c == ','){
+      buf[pb] = '\0';
+      if (f == 3) lng = atof(buf);
+      if (f == 4) lng_c = buf[0];
+      if (f == 5) lat = atof(buf);
+      if (f == 6) lat_c = buf[0];
+      if (f == 9) tm = atoi(buf);
+      pb = 0;
+      f++;
+    }
+    else buf[pb++] = c;
+    if (f == 2 && c == 'A') fValid = 1;
+    p++;
+  }
+  return(fValid);
+}
 
 File fp;
 SdFat sd;
@@ -107,18 +137,19 @@ void loop()
 			while(Serial.available() > 0 && pBuf < LEN_LINE){
 				char c = Serial.read();
 				if (c == '\r'){
-	 				buf[pBuf] = '\0';
+	 				line[pBuf] = '\0';
 // $GNRMC,,V,,,,,,,,,,M*4E
 // $GNRMC,002154.000,V,3632.61109,N,13642.31699,E,0.13,0.00,,,,A*6A
 // $GNRMC,002220.000,A,3632.64273,N,13642.30496,E,0.00,0.00,220524,,,A*7B
-					if (buf[3] == 'R' && buf[4] == 'M' && buf[5] == 'C'){
+					if (line[3] == 'R' && line[4] == 'M' && line[5] == 'C'){
 						ss.print('*');
-						ss.println(buf);
+						ss.println(line);
+						ss.println(NMEAparse(line));
 					}
-					ss.println(buf);
+					ss.println(line);
 					pBuf = 0;
 				}
-				buf[pBuf++] = c;
+				line[pBuf++] = c;
 			}
 /*
 			while (Serial.available() > 0)
@@ -150,10 +181,10 @@ void loop()
 		}
 		digitalWrite(PIN_LED, 0);
 		PowGPS(0);
-		ss.print("Lat="); ss.print(gps.location.lat(), 6);
-		ss.print(" Lng="); ss.println(gps.location.lng(), 6);
-		ss.print(gps.date.year()); ss.print(F("/")); ss.print(gps.date.month()); ss.print(F("/")); ss.print(gps.date.day()); ss.print(' ');
-		ss.print(gps.time.hour()); ss.print(F(":")); ss.print(gps.time.minute()); ss.print(F(":")); ss.println(gps.time.second());
+//		ss.print("Lat="); ss.print(gps.location.lat(), 6);
+//		ss.print(" Lng="); ss.println(gps.location.lng(), 6);
+//		ss.print(gps.date.year()); ss.print(F("/")); ss.print(gps.date.month()); ss.print(F("/")); ss.print(gps.date.day()); ss.print(' ');
+//		ss.print(gps.time.hour()); ss.print(F(":")); ss.print(gps.time.minute()); ss.print(F(":")); ss.println(gps.time.second());
 /*
 		ss.print("initializing SD card...");
 		PowSD(1);
