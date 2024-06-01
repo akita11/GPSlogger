@@ -17,7 +17,7 @@ char line[LEN_LINE];
 
 float lng, lat;
 char lng_c, lat_c;
-uint16_t dt, tm;
+uint32_t dt, tm;
 
 uint8_t NMEAparse(char *line)
 	{
@@ -33,7 +33,10 @@ uint8_t NMEAparse(char *line)
 		char c = line[p];
 		if (c == ','){
 		buf[pb] = '\0';
-		if (f == 1) tm = atof(buf);
+		if (f == 1){
+			buf[6] = '\0';
+			tm = atoi(buf);
+		}
 		if (f == 3) lng = atof(buf);
 		if (f == 4) lng_c = buf[0];
 		if (f == 5) lat = atof(buf);
@@ -84,9 +87,9 @@ void PowGPS(uint8_t val)
 
 volatile uint16_t cnt = 0;
 ISR(WDT_vect)
-	{
-		cnt++;
-	}
+{
+	cnt++;
+}
 
 void setup()
 {
