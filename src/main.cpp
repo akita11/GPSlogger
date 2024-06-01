@@ -178,7 +178,8 @@ void loop()
 			if (dt < 100000) fp.print('0'); fp.print(dt); fp.print(',');
 			if (tm < 100000) fp.print('0'); fp.print(tm); fp.print(',');
 			fp.print(lat); fp.print(',');	fp.print(lat_c); fp.print(',');
-			fp.print(lng); fp.print(','); fp.println(lng_c);
+			fp.print(lng); fp.print(','); fp.print(lng_c); fp.print(',');
+			fp.println(nTrial); 
 			fp.close();
 			ss.println("done");
 			delay(1000);
