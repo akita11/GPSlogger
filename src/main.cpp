@@ -121,6 +121,8 @@ void setup()
 // SD write : 30mA?
 // sleep		: 0.1mA -> 0.01mA (CMP&ADC off)
 
+#define N_TRIAL_MAX 300
+
 void loop()
 {
 	digitalWrite(PIN_LED, 1); delay(10); digitalWrite(PIN_LED, 0);
@@ -131,7 +133,8 @@ void loop()
 		digitalWrite(PIN_LED, 1); 
 		uint8_t fin = 0;
 		uint8_t pBuf = 0;
-		while(fin == 0){
+		uint16_t nTrial = 0;
+		while(fin == 0 && nTrial < N_TRIAL_MAX){
 			while(Serial.available() > 0 && pBuf < LEN_LINE){
 				char c = Serial.read();
 				line[pBuf++] = c;
@@ -142,6 +145,7 @@ void loop()
 //						ss.println('*');
 						ss.println(line);
 						fin = NMEAparse(line);
+						nTrial++;
 					}
 					pBuf = 0;
 				}
@@ -153,32 +157,33 @@ void loop()
 		ss.print(lat); ss.print(' '); ss.print(lat_c); ss.print(' ');
 		ss.print(dt); ss.print(' '); ss.println(tm);
 		PowGPS(0);
-
-		ss.print("initializing SD card...");
-		PowSD(1);
-		delay(1000);
-		if (!sd.begin(PIN_SD_CS, SD_SCK_MHZ(50)))
-			{
-				sd.initErrorPrint();
-				while (1)
+		if (nTrial < N_TRIAL_MAX){
+			ss.print("initializing SD card...");
+			PowSD(1);
+			delay(1000);
+			if (!sd.begin(PIN_SD_CS, SD_SCK_MHZ(50)))
 				{
-					digitalWrite(PIN_LED, 1);
-					delay(100);
-					digitalWrite(PIN_LED, 0);
-					delay(100);
+					sd.initErrorPrint();
+					while (1)
+					{
+						digitalWrite(PIN_LED, 1);
+						delay(100);
+						digitalWrite(PIN_LED, 0);
+						delay(100);
+					}
 				}
-			}
-		ss.print("write to SD card...");
-		fp = sd.open(LOG_FILENAME, FILE_WRITE);
-		ss.println(fp);
-		fp.print(dt); fp.print(',');
-		fp.print(tm); fp.print(',');
-		fp.print(lat); fp.print(',');	fp.print(lat_c); fp.print(',');
-		fp.print(lng); fp.print(','); fp.println(lng_c);
-		fp.close();
-		ss.println("done");
-		delay(1000);
-		PowSD(0);
+			ss.print("write to SD card...");
+			fp = sd.open(LOG_FILENAME, FILE_WRITE);
+			ss.println(fp);
+			if (dt < 100000) fp.print('0'); fp.print(dt); fp.print(',');
+			if (tm < 100000) fp.print('0'); fp.print(tm); fp.print(',');
+			fp.print(lat); fp.print(',');	fp.print(lat_c); fp.print(',');
+			fp.print(lng); fp.print(','); fp.println(lng_c);
+			fp.close();
+			ss.println("done");
+			delay(1000);
+			PowSD(0);
+		}
 		cnt = 0;
 	}
 	sleep_mode();
