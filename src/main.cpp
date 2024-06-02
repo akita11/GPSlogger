@@ -17,10 +17,10 @@ char line[LEN_LINE];
 
 float lng, lat;
 char lng_c, lat_c;
-uint32_t dt, tm;
+char  dt[8], tm[8];
 
 uint8_t NMEAparse(char *line)
-	{
+{
 	// $GNRMC,,V,,,,,,,,,,M*4E
 	// $GNRMC,002154.000,V,3632.61109,N,13642.31699,E,0.13,0.00,,,,A*6A
 	// $GNRMC,002220.000,A,3632.64273,N,13642.30496,E,0.00,0.00,220524,,,A*7B
@@ -32,18 +32,15 @@ uint8_t NMEAparse(char *line)
 	while(p < strlen(line)){
 		char c = line[p];
 		if (c == ','){
-		buf[pb] = '\0';
-		if (f == 1){
-			buf[6] = '\0';
-			tm = atoi(buf);
-		}
-		if (f == 3) lng = atof(buf);
-		if (f == 4) lng_c = buf[0];
-		if (f == 5) lat = atof(buf);
-		if (f == 6) lat_c = buf[0];
-		if (f == 9) dt = atoi(buf);
-		pb = 0;
-		f++;
+			buf[pb] = '\0';
+			if (f == 1){ buf[6] = '\0'; strcpy(tm, buf);}
+			if (f == 3) lng = atof(buf);
+			if (f == 4) lng_c = buf[0];
+			if (f == 5) lat = atof(buf);
+			if (f == 6) lat_c = buf[0];
+			if (f == 9){ strcpy(dt, buf);}
+			pb = 0;
+			f++;
 		}
 		else buf[pb++] = c;
 		if (f == 2 && c == 'A') fValid = 1;
@@ -95,6 +92,7 @@ void setup()
 {
 	Serial.begin(9600); // from GPS
 	ss.begin(115200); // for debug console
+
 	pinMode(PIN_POW_SD, OUTPUT); pinMode(PIN_POW_GPS, OUTPUT);
 	pinMode(PIN_LED, OUTPUT); digitalWrite(PIN_LED, 0);
 	// flash LED at boot
@@ -178,8 +176,10 @@ void loop()
 			ss.print("write to SD card...");
 			fp = sd.open(LOG_FILENAME, FILE_WRITE);
 			ss.println(fp);
-			if (dt < 100000) fp.print('0'); fp.print(dt); fp.print(',');
-			if (tm < 100000) fp.print('0'); fp.print(tm); fp.print(',');
+			fp.print(dt); fp.print(',');
+			fp.print(tm); fp.print(',');
+//			if (dt < 100000) fp.print('0'); fp.print(dt); fp.print(',');
+//			if (tm < 100000) fp.print('0'); fp.print(tm); fp.print(',');
 			fp.print(lat); fp.print(',');	fp.print(lat_c); fp.print(',');
 			fp.print(lng); fp.print(','); fp.print(lng_c); fp.print(',');
 			fp.println(nTrial); 
