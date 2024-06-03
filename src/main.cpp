@@ -18,12 +18,17 @@ char line[LEN_LINE];
 float lng, lat;
 char lng_c, lat_c;
 char  dt[8], tm[8];
+float height;
 
-uint8_t NMEAparse(char *line)
+uint8_t NMEAparse(char *line, uint8_t type)
 {
+	// for type 0:
 	// $GNRMC,,V,,,,,,,,,,M*4E
 	// $GNRMC,002154.000,V,3632.61109,N,13642.31699,E,0.13,0.00,,,,A*6A
 	// $GNRMC,002220.000,A,3632.64273,N,13642.30496,E,0.00,0.00,220524,,,A*7B
+
+	// for type 1:
+	// $GPGGA,052400.00,3539.3146239,N,13945.6411751,E,4,07,0.59,4.987,M,34.035,M,1.0,3403*76
 	uint8_t p = 0;
 	uint8_t f = 0;
 	char buf[64];
@@ -33,17 +38,22 @@ uint8_t NMEAparse(char *line)
 		char c = line[p];
 		if (c == ','){
 			buf[pb] = '\0';
-			if (f == 1){ buf[6] = '\0'; strcpy(tm, buf);}
-			if (f == 3) lng = atof(buf);
-			if (f == 4) lng_c = buf[0];
-			if (f == 5) lat = atof(buf);
-			if (f == 6) lat_c = buf[0];
-			if (f == 9){ strcpy(dt, buf);}
+			if (type == 0){
+				if (f == 1){ buf[6] = '\0'; strcpy(tm, buf);}
+				if (f == 3) lng = atof(buf);
+				if (f == 4) lng_c = buf[0];
+				if (f == 5) lat = atof(buf);
+				if (f == 6) lat_c = buf[0];
+				if (f == 9){ strcpy(dt, buf);}
+			}
+			else if (type == 1){
+				if (f == 9) height = atof(buf);
+			}
 			pb = 0;
 			f++;
 		}
 		else buf[pb++] = c;
-		if (f == 2 && c == 'A') fValid = 1;
+		if (type == 0 && f == 2 && c == 'A') fValid = 1;
 		p++;
 	}
 	return(fValid);
@@ -141,12 +151,18 @@ void loop()
 				line[pBuf++] = c;
 				if (c == '\r' || c == '\n'){
 					line[pBuf] = '\0';
-					if (pBuf > 10 && line[3] == 'R' && line[4] == 'M' && line[5] == 'C'){
-						digitalWrite(PIN_LED, 1 - digitalRead(PIN_LED)); 
-//						ss.println('*');
-						ss.println(line);
-						fin = NMEAparse(line);
-						nTrial++;
+					if (pBuf > 10){
+						if (line[3] == 'R' && line[4] == 'M' && line[5] == 'C'){
+							digitalWrite(PIN_LED, 1 - digitalRead(PIN_LED)); 
+//							ss.println('*');
+//							ss.println(line);
+							fin = NMEAparse(line, 0);
+							nTrial++;
+						}
+						else if (line[3] == 'G' && line[4] == 'G' && line[5] == 'A'){
+							fin = NMEAparse(line, 1);
+							nTrial++;
+						}
 					}
 					pBuf = 0;
 				}
