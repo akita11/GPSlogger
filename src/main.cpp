@@ -160,8 +160,7 @@ void loop()
 							nTrial++;
 						}
 						else if (line[3] == 'G' && line[4] == 'G' && line[5] == 'A'){
-							fin = NMEAparse(line, 1);
-							nTrial++;
+							NMEAparse(line, 1);
 						}
 					}
 					pBuf = 0;
@@ -198,6 +197,7 @@ void loop()
 //			if (tm < 100000) fp.print('0'); fp.print(tm); fp.print(',');
 			fp.print(lat); fp.print(',');	fp.print(lat_c); fp.print(',');
 			fp.print(lng); fp.print(','); fp.print(lng_c); fp.print(',');
+			fp.print(height); fp.print(',');
 			fp.println(nTrial); 
 			fp.close();
 			ss.println("done");
