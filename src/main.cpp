@@ -15,10 +15,12 @@
 #define LEN_LINE 128
 char line[LEN_LINE];
 
-float lng, lat;
+//float lng, lat;
+char lng[20], lat[20];
 char lng_c, lat_c;
 char  dt[8], tm[8];
-float height;
+//float height;
+char height[20];
 
 uint8_t NMEAparse(char *line, uint8_t type)
 {
@@ -40,14 +42,17 @@ uint8_t NMEAparse(char *line, uint8_t type)
 			buf[pb] = '\0';
 			if (type == 0){
 				if (f == 1){ buf[6] = '\0'; strcpy(tm, buf);}
-				if (f == 3) lng = atof(buf);
+//				if (f == 3) lng = atof(buf);
+				if (f == 3){ strcpy(lng, buf);}
 				if (f == 4) lng_c = buf[0];
-				if (f == 5) lat = atof(buf);
+//				if (f == 5) lat = atof(buf);
+				if (f == 5){ strcpy(lat, buf);}
 				if (f == 6) lat_c = buf[0];
 				if (f == 9){ strcpy(dt, buf);}
 			}
 			else if (type == 1){
-				if (f == 9) height = atof(buf);
+//				if (f == 9) height = atof(buf);
+				if (f == 9){ strcpy(height, buf);}
 			}
 			pb = 0;
 			f++;
