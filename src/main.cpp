@@ -97,7 +97,7 @@ void PowGPS(uint8_t val)
 		}
 	}
 
-volatile uint16_t cnt = 0;
+volatile uint16_t cnt;
 ISR(WDT_vect)
 {
 	cnt++;
@@ -112,7 +112,7 @@ void setup()
 	pinMode(PIN_LED, OUTPUT); digitalWrite(PIN_LED, 0);
 	// flash LED at boot
 	for (uint8_t i = 0; i < 3; i++){ digitalWrite(PIN_LED, 1); delay(100); digitalWrite(PIN_LED, 0); delay(100); }
-  cli();
+	cli();
  	MCUSR = 0;
 	WDTCSR |= 0b00011000; // set WDCE & WDE
 //	WDTCSR =  0b01000000 | 0b00100000; // enable WDT interrupt, cycle = 4s
@@ -120,6 +120,7 @@ void setup()
 	sei();
 	set_sleep_mode(SLEEP_MODE_PWR_DOWN); //set sleep mode
 
+	Serial.println("start"); delay(1000);
 	cnt = 0;
 	DDRC = 0xff; // A0-A5 as OUTPUT
 	PORTC = 0x11; // A0&A4 = 1, others=0
@@ -131,6 +132,7 @@ void setup()
 	ADCSRA = 0x00; // disable ADC
 
 	PowSD(0); PowGPS(0);
+	cnt = 10298;
 }
 
 // GPS on   : 35mA
@@ -142,9 +144,12 @@ void setup()
 void loop()
 {
 	digitalWrite(PIN_LED, 1); delay(10); digitalWrite(PIN_LED, 0);
-	ss.println(cnt);
-	if (cnt == 10){
-		ss.println("start");
+//	Serial.println(cnt); delay(1000);
+//	ss.println(cnt);
+//	if (cnt == 10){ // 8s * 10 = 80s
+	if (cnt == 10300){ // 8.192s * 10000 = 81920s = 22.76h
+//		ss.println("start logging");
+//		Serial.println("start logging"); delay(1000);
 		PowGPS(1);
 		digitalWrite(PIN_LED, 1); 
 		uint8_t fin = 0;
@@ -198,8 +203,6 @@ void loop()
 			ss.println(fp);
 			fp.print(dt); fp.print(',');
 			fp.print(tm); fp.print(',');
-//			if (dt < 100000) fp.print('0'); fp.print(dt); fp.print(',');
-//			if (tm < 100000) fp.print('0'); fp.print(tm); fp.print(',');
 			fp.print(lat); fp.print(',');	fp.print(lat_c); fp.print(',');
 			fp.print(lng); fp.print(','); fp.print(lng_c); fp.print(',');
 			fp.print(height); fp.print(',');
