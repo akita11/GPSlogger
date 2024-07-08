@@ -5,6 +5,9 @@
 #include <avr/wdt.h> 
 #include <avr/sleep.h>
 
+#define N_CYCLE 10300 // 8.192s * 10300 = 84380s = 23.43h
+//#define N_CYCLE 10 // 8.192 * 10 = 81.92s
+
 #define LOG_FILENAME "log.csv"
 
 #define PIN_POW_SD A0 // for v1
@@ -21,6 +24,8 @@ char lng_c, lat_c;
 char  dt[8], tm[8];
 //float height;
 char height[20];
+
+//#define FACTORY_TEST
 
 uint8_t NMEAparse(char *line, uint8_t type)
 {
@@ -112,28 +117,42 @@ void setup()
 	pinMode(PIN_LED, OUTPUT); digitalWrite(PIN_LED, 0);
 	// flash LED at boot
 	for (uint8_t i = 0; i < 3; i++){ digitalWrite(PIN_LED, 1); delay(100); digitalWrite(PIN_LED, 0); delay(100); }
+
+#ifdef FACTORY_TEST
+#else
 	cli();
  	MCUSR = 0;
 	WDTCSR |= 0b00011000; // set WDCE & WDE
-//	WDTCSR =  0b01000000 | 0b00100000; // enable WDT interrupt, cycle = 4s
 	WDTCSR =  0b01000000 | 0b00100001; // enable WDT interrupt, cycle = 8s
 	sei();
 	set_sleep_mode(SLEEP_MODE_PWR_DOWN); //set sleep mode
-
-	Serial.println("start"); delay(1000);
-	cnt = 0;
+#endif
 	DDRC = 0xff; // A0-A5 as OUTPUT
 	PORTC = 0x11; // A0&A4 = 1, others=0
 	DDRB = 0xff; // 8-13 as OUTPUT
-	PORTB = 0x00; // 8-13 = 0
-	DDRD = 0xfe; // 1-7 as OUTPUT, 1 as INPUT 
+//	PORTB = 0x00; // 8-13 = 0
+//	DDRD = 0xfe; // 1-7 as OUTPUT, 1 as INPUT 
 	PORTD = 0x00; // 0-7 = 0
 	ACSR |= _BV(ACD); // disable analog comparator
 	ADCSRA = 0x00; // disable ADC
 
+	PowSD(1);
+	delay(1000);
+	if (!sd.begin(PIN_SD_CS, SD_SCK_MHZ(50)))
+	{
+		while (1)
+		{
+			digitalWrite(PIN_LED, 1);
+			delay(100);
+			digitalWrite(PIN_LED, 0);
+			delay(100);
+		}
+	}
+
 	PowSD(0); PowGPS(0);
-	cnt = 10298;
+	cnt = N_CYCLE - 1;
 }
+
 
 // GPS on   : 35mA
 // SD write : 30mA?
@@ -141,15 +160,40 @@ void setup()
 
 #define N_TRIAL_MAX 300
 
+// cycle test
+//[2024-07-02 10:22:45.489] start
+//[2024-07-02 10:23:01.276] start logging
+//[2024-07-03 08:54:42.972] start logging / 22.52805556 hour
+//[2024-07-04 07:27:07.584] start logging / 22.54027778 hour
+//[2024-07-05 06:00:02.676] start logging / 22.54861111 hour
+
 void loop()
 {
+#ifdef FACTORY_TEST
+	digitalWrite(PIN_LED, 1);
+	PowSD(1);
+	PowGPS(1);
+	delay(1000);
+	if (!sd.begin(PIN_SD_CS, SD_SCK_MHZ(50)))
+	{
+		while (1)
+		{
+			digitalWrite(PIN_LED, 1);
+			delay(100);
+			digitalWrite(PIN_LED, 0);
+			delay(100);
+		}
+	}
+	digitalWrite(PIN_LED, 0);
+	PowSD(0);
+	PowGPS(0);
+	delay(1000);
+#else
 	digitalWrite(PIN_LED, 1); delay(10); digitalWrite(PIN_LED, 0);
 //	Serial.println(cnt); delay(1000);
 //	ss.println(cnt);
-//	if (cnt == 10){ // 8s * 10 = 80s
-	if (cnt == 10300){ // 8.192s * 10000 = 81920s = 22.76h
+	if (cnt == N_CYCLE){
 //		ss.println("start logging");
-//		Serial.println("start logging"); delay(1000);
 		PowGPS(1);
 		digitalWrite(PIN_LED, 1); 
 		uint8_t fin = 0;
@@ -215,4 +259,5 @@ void loop()
 		cnt = 0;
 	}
 	sleep_mode();
+#endif
 }
