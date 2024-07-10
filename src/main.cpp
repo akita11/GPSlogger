@@ -135,7 +135,6 @@ void setup()
 	PORTD = 0x00; // 0-7 = 0
 	ACSR |= _BV(ACD); // disable analog comparator
 	ADCSRA = 0x00; // disable ADC
-
 	PowSD(1);
 	delay(1000);
 	if (!sd.begin(PIN_SD_CS, SD_SCK_MHZ(50)))
@@ -148,7 +147,6 @@ void setup()
 			delay(100);
 		}
 	}
-
 	PowSD(0); PowGPS(0);
 	cnt = N_CYCLE - 1;
 }
