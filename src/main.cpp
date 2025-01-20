@@ -110,7 +110,8 @@ ISR(WDT_vect)
 
 void setup()
 {
-	Serial.begin(9600); // from GPS
+	Serial.begin(9600); // from GPS UNIT v1.0
+//	Serial.begin(115200); // from GPS UNIT v1.1, not working (buffer overun)
 	ss.begin(115200); // for debug console
 
 	pinMode(PIN_POW_SD, OUTPUT); pinMode(PIN_POW_GPS, OUTPUT);
