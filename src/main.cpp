@@ -7,6 +7,7 @@
 
 #define N_CYCLE 10300 // 8.192s * 10300 = 84380s = 23.43h
 //#define N_CYCLE 10 // 8.192 * 10 = 81.92s
+//#define N_CYCLE 50 // 8.192 * 50 = 400s
 
 #define LOG_FILENAME "log.csv"
 
@@ -110,9 +111,9 @@ ISR(WDT_vect)
 
 void setup()
 {
-	Serial.begin(9600); // from GPS UNIT v1.0
 //	Serial.begin(115200); // from GPS UNIT v1.1, not working (buffer overun)
-	ss.begin(115200); // for debug console
+	Serial.begin(9600);
+//	ss.begin(115200); // for debug console
 
 	pinMode(PIN_POW_SD, OUTPUT); pinMode(PIN_POW_GPS, OUTPUT);
 	pinMode(PIN_LED, OUTPUT); digitalWrite(PIN_LED, 0);
@@ -148,6 +149,7 @@ void setup()
 			delay(100);
 		}
 	}
+
 	PowSD(0); PowGPS(0);
 	cnt = N_CYCLE - 1;
 }
@@ -194,6 +196,13 @@ void loop()
 	if (cnt == N_CYCLE){
 //		ss.println("start logging");
 		PowGPS(1);
+		Serial.begin(115200); // for GPS UNIT v1.1 to change baudrate
+		Serial.println("g"); // dummy
+		delay(3000);
+		Serial.println("$PCAS01,1*1D"); // change baud to 9600bps
+		delay(1000);
+		Serial.begin(9600);
+
 		digitalWrite(PIN_LED, 1); 
 		uint8_t fin = 0;
 		uint8_t pBuf = 0;
@@ -201,14 +210,13 @@ void loop()
 		while(fin == 0 && nTrial < N_TRIAL_MAX){
 			while(Serial.available() > 0 && pBuf < LEN_LINE){
 				char c = Serial.read();
+//				ss.write(c);
 				line[pBuf++] = c;
 				if (c == '\r' || c == '\n'){
 					line[pBuf] = '\0';
 					if (pBuf > 10){
 						if (line[3] == 'R' && line[4] == 'M' && line[5] == 'C'){
 							digitalWrite(PIN_LED, 1 - digitalRead(PIN_LED)); 
-//							ss.println('*');
-//							ss.println(line);
 							fin = NMEAparse(line, 0);
 							nTrial++;
 						}
