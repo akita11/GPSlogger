@@ -5,6 +5,7 @@
 #include <avr/wdt.h> 
 #include <avr/sleep.h>
 
+// ToDo: connect TXD(D1) to Grove's p2
 #define N_CYCLE 10300 // 8.192s * 10300 = 84380s = 23.43h
 //#define N_CYCLE 10 // 8.192 * 10 = 81.92s
 //#define N_CYCLE 50 // 8.192 * 50 = 400s
